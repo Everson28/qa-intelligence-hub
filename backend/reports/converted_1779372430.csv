@@ -1,0 +1,6 @@
+﻿environment,title,severity,expected,created_at,status,steps,actual
+Staging,Vulnerabilidad Crítica de Seguridad: Inyección SQL en get_user_data,Critical,,2026-05-20 17:22:43.512447,Open,"Steps to Reproduce:
+          1. Abrir el archivo database.py.
+          2. Revisar la función get_user_data.
+          3. Notar que concatena el user_id directamente en el string de la query.",
+QA,Error 404 al intentar descargar reporte CSV,High,,2026-05-20 17:46:00.101153,Open,1. Entrar a Bug Reporter. 2. Ir a Ver Bugs. 3. Click en Exportar CSV.,

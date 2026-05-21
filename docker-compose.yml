@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: qa-hub-db
+    environment:
+      - POSTGRES_USER=qa_user
+      - POSTGRES_PASSWORD=qa_password
+      - POSTGRES_DB=qa_hub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: qa-hub-ai
+    volumes:
+      - ollama_data:/root/.ollama
+    # Descomenta las líneas de abajo si tienes GPU NVIDIA configurada en Docker
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    restart: always
+
+  backend:
+    build: ./backend
+    container_name: qa-hub-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://qa_user:qa_password@db:5432/qa_hub
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - db
+      - ollama
+    volumes:
+      - backend_reports:/app/backend/reports
+    restart: always
+
+  frontend:
+    build: ./frontend
+    container_name: qa-hub-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  postgres_data:
+  ollama_data:
+  backend_reports:

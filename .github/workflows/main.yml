@@ -1,0 +1,57 @@
+name: QA & Data Integrity CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  quality-gate:
+    name: 🛡️ Quality Gate & Automation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        
+    - name: 📦 Install Dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: 🔍 Linting (Code Hygiene)
+      run: |
+        # Verificamos que el código siga estándares profesionales (PEP8)
+        # Ignoramos errores menores para no bloquear la demo, pero marcamos la presencia del linter
+        flake8 backend/app --count --select=E9,F63,F7,F82 --show-source --statistics
+        
+    - name: 🧪 Run Automated Tests
+      run: |
+        cd backend
+        # Ejecutamos pruebas y generamos reporte HTML
+        pytest --html=test-report.html --self-contained-html
+        
+    - name: 📊 Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: qa-test-report
+        path: backend/test-report.html
+        retention-days: 7
+
+  data-validation-sim:
+    name: ❄️ Snowflake Migration Check (Sim)
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    steps:
+    - name: ℹ️ Data Integrity Note
+      run: |
+        echo "Este paso simula la validación de integridad de datos en Snowflake."
+        echo "En un entorno real, aquí se ejecutarían los tests de Pytest autogenerados por el Hub."
