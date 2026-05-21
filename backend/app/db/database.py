@@ -1,17 +1,29 @@
 import os
 from sqlmodel import SQLModel, create_engine, Session
 
-# Directorio base del proyecto (donde está qa_hub.db en la raíz)
-# backend/app/db/database.py -> backend/app/db (1) -> backend/app (2) -> backend (3) -> root (4)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-db_path = os.path.join(BASE_DIR, "qa_hub.db")
+# Prioridad absoluta a la variable de entorno del sistema (Render/Nube)
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{db_path}")
+# Si no existe en el sistema, buscamos en el archivo local (Solo para desarrollo)
+if not DATABASE_URL:
+    from dotenv import load_dotenv
+    load_dotenv()
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./qa_hub.db")
 
-# Connect args solo son necesarios para SQLite
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+# Configuración de argumentos según el motor
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+elif DATABASE_URL.startswith("postgresql"):
+    # Render/Supabase necesitan SSL activo
+    connect_args = {}
 
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+engine = create_engine(
+    DATABASE_URL, 
+    connect_args=connect_args,
+    pool_pre_ping=True,  # Verifica que la conexión esté viva antes de usarla
+    pool_recycle=300     # Recicla conexiones cada 5 min para evitar timeouts
+)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
@@ -19,3 +31,4 @@ def create_db_and_tables():
 def get_session():
     with Session(engine) as session:
         yield session
+
