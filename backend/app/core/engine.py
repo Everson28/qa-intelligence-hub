@@ -92,12 +92,17 @@ class QAIntelligenceRouter:
                 )
 
             # --- Lógica Híbrida Inteligente ---
-            # Si estamos en Render/Vercel (nube) y el proveedor es 'localhost', saltar a Cloud si existe
+            # Si estamos en Render/Vercel (nube), solo saltamos si la URL es literalmente 'localhost' o '127.0.0.1'
+            # Las URLs de ngrok o túneles deben permitirse.
             is_in_cloud = os.environ.get("RENDER") or os.environ.get("VERCEL")
-            if is_in_cloud and not provider.is_cloud and "localhost" in provider.base_url:
+            base_url_lower = provider.base_url.lower()
+            
+            is_literal_local = "localhost" in base_url_lower or "127.0.0.1" in base_url_lower
+            
+            if is_in_cloud and not provider.is_cloud and is_literal_local:
                 cloud_fallback = session.exec(select(AIProvider).where(AIProvider.is_cloud == True, AIProvider.is_active == True)).first()
                 if cloud_fallback:
-                    print(f"Detectado entorno Nube: Saltando {provider.name} (localhost) -> {cloud_fallback.name}")
+                    print(f"Detectado entorno Nube: Saltando {provider.name} (localhost inalcanzable) -> {cloud_fallback.name}")
                     provider = cloud_fallback
 
             try:
@@ -160,6 +165,10 @@ class QAIntelligenceRouter:
                 session.commit()
         except Exception as e:
             print(f"FAILED TO LOG AI QUERY: {e}")
+
+# Exportar instancia global
+engine = QAIntelligenceRouter()
+print(f"FAILED TO LOG AI QUERY: {e}")
 
 # Exportar instancia global
 engine = QAIntelligenceRouter()

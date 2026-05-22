@@ -2,12 +2,14 @@ import subprocess
 import os
 import tempfile
 import asyncio
+import sys
 
 def _run_sync_script(script_path: str):
-    """Ejecuta un script de Playwright usando el python del venv."""
-    venv_python = r"C:\Users\AI\Desktop\QAt\.venv\Scripts\python.exe"
+    """Ejecuta un script usando el ejecutable de python actual."""
+    # Usar sys.executable para que funcione tanto localmente como en Docker
+    python_exec = sys.executable
     process = subprocess.run(
-        [venv_python, script_path],
+        [python_exec, script_path],
         capture_output=True,
         text=True,
         encoding='utf-8',
