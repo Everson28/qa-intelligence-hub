@@ -75,39 +75,44 @@ class QAIntelligenceRouter:
                 return cached.response
 
             # 1. Resolver Proveedor
-            # Prioridad 1: Routing específico por tarea
             routing = session.get(AIRouting, task_type)
             provider = None
             if routing:
                 provider = session.get(AIProvider, routing.provider_id)
             
-            # Prioridad 2: Proveedor marcado como activo
             if not provider:
                 provider = session.exec(select(AIProvider).where(AIProvider.is_active == True)).first()
 
-            # Prioridad 3: Emergencia (Ollama local por defecto si nada está configurado)
             if not provider:
                 provider = AIProvider(
                     name="Ollama (Local)",
-                    base_url="http://localhost:11434",
-                    default_model="qwen2.5-coder:7b",
+                    base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+                    default_model=os.getenv("OLLAMA_MODEL", "qwen2.5-coder:7b"),
                     is_cloud=False
                 )
+
+            # --- Lógica Híbrida Inteligente ---
+            # Si estamos en Render/Vercel (nube) y el proveedor es 'localhost', saltar a Cloud si existe
+            is_in_cloud = os.environ.get("RENDER") or os.environ.get("VERCEL")
+            if is_in_cloud and not provider.is_cloud and "localhost" in provider.base_url:
+                cloud_fallback = session.exec(select(AIProvider).where(AIProvider.is_cloud == True, AIProvider.is_active == True)).first()
+                if cloud_fallback:
+                    print(f"Detectado entorno Nube: Saltando {provider.name} (localhost) -> {cloud_fallback.name}")
+                    provider = cloud_fallback
 
             try:
                 start_time = datetime.utcnow()
                 response = ""
 
-                # 2. Ejecutar según tipo de proveedor
+                # 2. Ejecutar según tipo de proveedor con Fallback Automático
                 if not provider.is_cloud:
-                    # Intento local (Ollama)
                     try:
                         response = await self._query_ollama(provider, prompt, system, model_override)
                     except Exception as e:
-                        # Si falla lo local, buscar el primer proveedor Cloud activo como fallback
+                        # Fallback a Cloud si lo local falla
                         cloud_fallback = session.exec(select(AIProvider).where(AIProvider.is_cloud == True, AIProvider.is_active == True)).first()
                         if cloud_fallback:
-                            print(f"Ollama offline, saltando a Cloud ({cloud_fallback.name})...")
+                            print(f"Ollama offline ({e}), saltando a Cloud ({cloud_fallback.name})...")
                             provider = cloud_fallback
                         else:
                             raise e
@@ -116,12 +121,10 @@ class QAIntelligenceRouter:
                     if "google" in provider.base_url.lower() or "gemini" in provider.name.lower():
                         response = await self._query_gemini(provider, prompt, system, model_override)
                     else:
-                        # OpenAI, Groq, Anthropic (via proxy), etc.
                         response = await self._query_openai_style(provider, prompt, system, model_override)
                 
                 duration = int((datetime.utcnow() - start_time).total_seconds() * 1000)
                 
-                # 3. Guardar en Cache si la respuesta es válida
                 if response:
                     new_cache = AICache(
                         prompt_hash=p_hash, 
@@ -137,9 +140,8 @@ class QAIntelligenceRouter:
             
             except Exception as e:
                 error_details = f"{type(e).__name__}: {str(e)}"
-                print(f"CRITICAL AI ERROR: {error_details}")
                 self._log_query(task_type, provider, model_override or (provider.default_model if provider else "unknown"), prompt, "", 0, 500)
-                return f"Error en la conexión con la IA. Asegúrate de que tu modelo local esté corriendo o que tu API Key sea válida. Detalle: {error_details}"
+                return f"Error en la conexión con la IA (Modo Híbrido). Detalle: {error_details}"
 
     def _log_query(self, task_type: str, provider: Optional[AIProvider], model: str, prompt: str, response: str, duration: int, status_code: int, is_cached: bool = False):
         try:
