@@ -36,6 +36,7 @@ import HistoryView from './components/HistoryView';
 import AdminPanel from './components/AdminPanel';
 import Dashboard from './components/Dashboard';
 import Footer from './components/Footer';
+import Maintenance from './components/Maintenance';
 
 // Forms
 import RequirementForm from './components/forms/RequirementForm';
@@ -55,6 +56,9 @@ import AIValidationForm from './components/forms/AIValidationForm';
 import RegressionDetectorForm from './components/forms/RegressionDetectorForm';
 import QACopilot from './components/forms/QACopilot';
 import { API_ROOT, API_BASE } from './config';
+
+// Maintenance Mode Flag - Change to false to disable
+const isMaintenanceMode = true;
 
 // Set initial axios header if token exists to prevent 401 on first requests
 const initialToken = localStorage.getItem('token');
@@ -162,6 +166,10 @@ const App = () => {
     setCurrentUser(null);
     window.location.reload(); 
   };
+
+  if (isMaintenanceMode) {
+    return <Maintenance theme={theme} />;
+  }
 
   if (!token) {
     return (
