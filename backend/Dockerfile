@@ -28,4 +28,4 @@ RUN if [ -d "/app/tmp_build/static" ]; then cp -r /app/tmp_build/static/. /app/s
 EXPOSE 10000
 
 # Comando para iniciar la aplicación
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port $PORT"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]
