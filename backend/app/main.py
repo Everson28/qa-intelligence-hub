@@ -14,7 +14,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from bs4 import BeautifulSoup
 from typing import Dict, Any, List
-from sqlmodel import Session, select
+from sqlalchemy.orm import Session
+from sqlalchemy import select
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 
@@ -95,10 +96,59 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="QA Intelligence Hub Pro",
     description="Enterprise-grade QA AI Orchestrator.",
-    version="1.2.0",
-    lifespan=lifespan
+    version="1.2.0"
 )
+from fastapi import FastAPI
 
+app = FastAPI()
+
+@app.get("/")
+def root():
+    return {
+        "status": "ok",
+        "message": "QA Intelligence Hub API running"
+    }
+import os
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+@app.post("/api/ai/query")
+async def ai_query(payload: dict):
+    prompt = payload.get("prompt")
+
+    if not prompt:
+        raise HTTPException(status_code=400, detail="Prompt requerido")
+
+    api_key = os.getenv("GEMINI_API_KEY")
+
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Falta API Key")
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+
+    body = {
+        "contents": [
+            {
+                "parts": [{"text": prompt}]
+            }
+        ]
+    }
+
+    response = requests.post(url, json=body)
+    data = response.json()
+
+    try:
+        result = data["candidates"][0]["content"]["parts"][0]["text"]
+    except:
+        result = "Sin respuesta IA"
+
+    return {
+        "success": True,
+        "response": result
+    }
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
