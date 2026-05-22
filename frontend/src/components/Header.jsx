@@ -65,7 +65,7 @@ const Header = ({ activeTab, currentUser, onLogout }) => {
   };
 
   const checkHealth = () => {
-    axios.get('${API_BASE}/system/health')
+    axios.get(`${API_BASE}/system/health`)
       .then(res => setAiStatus(res.data.ai_engine))
       .catch(() => setAiStatus('Offline'));
   };
