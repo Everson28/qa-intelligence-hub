@@ -22,7 +22,11 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 # Directorios de sistema
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# auth.py está en app/api/v1/endpoints/, necesitamos subir 5 niveles para llegar a la raíz del backend (o 4 para llegar a la carpeta app si WORKDIR es /app)
+# Pero para ser consistentes con main.py (que sube 2 niveles desde app/main.py):
+# En main.py: /app/app/main.py -> /app/
+# En auth.py: /app/app/api/v1/endpoints/auth.py -> /app/
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 AVATARS_DIR = os.path.join(BASE_DIR, "static", "avatars")
 
 if not os.path.exists(AVATARS_DIR):
