@@ -18,8 +18,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar el código del backend (la carpeta 'app' está dentro de 'backend')
 COPY app /app/app
-# Copiar estáticos si existen
-COPY static /app/static
+
+# Crear carpetas necesarias y copiar estáticos si existen
+RUN mkdir -p /app/static /app/reports
+COPY . /app/tmp_build
+RUN if [ -d "/app/tmp_build/static" ]; then cp -r /app/tmp_build/static/. /app/static/; fi && rm -rf /app/tmp_build
 
 # Exponer el puerto
 EXPOSE 10000
