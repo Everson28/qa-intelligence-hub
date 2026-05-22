@@ -30,3 +30,5 @@ pytest-html==4.1.1
 selenium==4.21.0
 webdriver-manager==4.0.1
 fpdf2==2.5.0
+matplotlib==3.8.2
+pandas-profiling==3.3.0
