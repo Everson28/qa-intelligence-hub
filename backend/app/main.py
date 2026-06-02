@@ -119,6 +119,33 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.include_router(api_router, prefix="/api/v1")
 
 
+@app.get("/api/v1/system/setup")
+async def system_setup(session: Session = Depends(get_session)):
+    try:
+        from app.db.models import User
+        from app.core.security import get_password_hash
+        
+        # 1. Asegurar tablas
+        create_db_and_tables()
+        
+        # 2. Crear admin si no existe
+        admin = session.exec(select(User).where(User.email == "admin@example.com")).first()
+        if not admin:
+            new_admin = User(
+                username="admin",
+                email="admin@example.com",
+                hashed_password=get_password_hash("admin123"),
+                role="admin",
+                full_name="Administrator"
+            )
+            session.add(new_admin)
+            session.commit()
+            return {"status": "success", "message": "Admin user created: admin@example.com / admin123"}
+        
+        return {"status": "info", "message": "Admin user already exists"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
 @app.get("/")
 def root():
     return {
