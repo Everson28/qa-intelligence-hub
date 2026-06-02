@@ -168,7 +168,3 @@ class QAIntelligenceRouter:
 
 # Exportar instancia global
 engine = QAIntelligenceRouter()
-print(f"FAILED TO LOG AI QUERY: {e}")
-
-# Exportar instancia global
-engine = QAIntelligenceRouter()
