@@ -58,7 +58,7 @@ import QACopilot from './components/forms/QACopilot';
 import { API_ROOT, API_BASE } from './config';
 
 // Maintenance Mode Flag - Change to false to disable
-const isMaintenanceMode = true;
+const isMaintenanceMode = false;
 
 // Set initial axios header if token exists to prevent 401 on first requests
 const initialToken = localStorage.getItem('token');
